@@ -46,7 +46,7 @@ export default function Admin({
     description: string;
     specifications: string;
     accessories: string;
-    imagesStr: string;
+    images: string[];
   }>({
     name: '',
     brand: 'Canon',
@@ -62,8 +62,45 @@ export default function Admin({
     description: '',
     specifications: '',
     accessories: '',
-    imagesStr: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=800&q=80',
+    images: ['https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=800&q=80'],
   });
+
+  const [newImgInput, setNewImgInput] = useState('');
+
+  const handleAddImage = () => {
+    if (!newImgInput.trim()) return;
+    setProdForm({
+      ...prodForm,
+      images: [...prodForm.images, newImgInput.trim()],
+    });
+    setNewImgInput('');
+  };
+
+  const handleDeleteImage = (idx: number) => {
+    if (prodForm.images.length <= 1) {
+      alert('A product must have at least one image.');
+      return;
+    }
+    const updated = prodForm.images.filter((_, i) => i !== idx);
+    setProdForm({ ...prodForm, images: updated });
+  };
+
+  const handleMoveImage = (idx: number, direction: 'left' | 'right') => {
+    const images = [...prodForm.images];
+    const target = direction === 'left' ? idx - 1 : idx + 1;
+    if (target < 0 || target >= images.length) return;
+    const temp = images[idx];
+    images[idx] = images[target];
+    images[target] = temp;
+    setProdForm({ ...prodForm, images });
+  };
+
+  const handleSetPrimary = (idx: number) => {
+    const images = [...prodForm.images];
+    const [primary] = images.splice(idx, 1);
+    images.unshift(primary);
+    setProdForm({ ...prodForm, images });
+  };
 
   // Category Form state
   const [newCatName, setNewCatName] = useState('');
@@ -97,10 +134,9 @@ export default function Admin({
 
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    const images = prodForm.imagesStr.split(',').map((s) => s.trim()).filter(Boolean);
     const payload = {
       ...prodForm,
-      images: images.length > 0 ? images : ['https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=800&q=80'],
+      images: prodForm.images.length > 0 ? prodForm.images : ['https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=800&q=80'],
     };
 
     try {
@@ -382,7 +418,7 @@ export default function Admin({
                   description: '',
                   specifications: '',
                   accessories: '',
-                  imagesStr: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=800&q=80',
+                  images: ['https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=800&q=80'],
                 });
                 setIsAddingProduct(true);
               }}
@@ -501,14 +537,85 @@ export default function Admin({
                   </select>
                 </div>
 
-                <div className="sm:col-span-2">
-                  <label className="block text-gray-300 font-semibold mb-1">Image URLs (comma separated)</label>
-                  <input
-                    type="text"
-                    value={prodForm.imagesStr}
-                    onChange={(e) => setProdForm({ ...prodForm, imagesStr: e.target.value })}
-                    className="w-full bg-[#101010] border border-[#333] rounded-lg px-3 py-2 text-white"
-                  />
+                <div className="sm:col-span-2 space-y-3 bg-[#101010] p-4 rounded-xl border border-[#2A2A2A]">
+                  <label className="block text-gray-200 font-bold text-xs uppercase tracking-wider">
+                    🖼️ Product Images Management ({prodForm.images.length})
+                  </label>
+                  <p className="text-[11px] text-gray-400">
+                    Manage product photos. The first image is the main thumbnail. Use buttons to reorder, set primary, or delete.
+                  </p>
+
+                  {/* Thumbnails grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {prodForm.images.map((imgUrl, idx) => (
+                      <div key={idx} className="relative bg-[#1B1B1B] border border-[#333] rounded-xl overflow-hidden p-2 space-y-2 group">
+                        <div className="h-24 bg-black rounded-lg overflow-hidden relative">
+                          <img src={imgUrl} alt="" className="w-full h-full object-cover" />
+                          {idx === 0 && (
+                            <span className="absolute top-1 left-1 bg-[#D6A84B] text-[#101010] font-black text-[9px] px-1.5 py-0.5 rounded">
+                              👑 Primary
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap items-center justify-between gap-1 text-[10px]">
+                          {idx !== 0 && (
+                            <button
+                              type="button"
+                              onClick={() => handleSetPrimary(idx)}
+                              className="text-[#D6A84B] hover:underline"
+                            >
+                              Make Primary
+                            </button>
+                          )}
+                          <div className="flex gap-1 ml-auto">
+                            {idx > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => handleMoveImage(idx, 'left')}
+                                className="bg-[#2A2A2A] text-white px-1.5 py-0.5 rounded"
+                              >
+                                ◀️
+                              </button>
+                            )}
+                            {idx < prodForm.images.length - 1 && (
+                              <button
+                                type="button"
+                                onClick={() => handleMoveImage(idx, 'right')}
+                                className="bg-[#2A2A2A] text-white px-1.5 py-0.5 rounded"
+                              >
+                                ▶️
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteImage(idx)}
+                              className="bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded"
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Add Image Input */}
+                  <div className="flex gap-2 pt-2">
+                    <input
+                      type="url"
+                      placeholder="Paste image URL here (https://...)"
+                      value={newImgInput}
+                      onChange={(e) => setNewImgInput(e.target.value)}
+                      className="flex-1 bg-[#1B1B1B] border border-[#333] rounded-lg px-3 py-2 text-white text-xs"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddImage}
+                      className="bg-[#D6A84B] text-[#101010] font-black px-4 py-2 rounded-lg text-xs"
+                    >
+                      ➕ Add Image
+                    </button>
+                  </div>
                 </div>
 
                 <div className="sm:col-span-2">
@@ -645,7 +752,7 @@ export default function Admin({
                               description: p.description,
                               specifications: p.specifications,
                               accessories: p.accessories,
-                              imagesStr: p.images.join(', '),
+                              images: p.images?.length > 0 ? [...p.images] : ['https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=800&q=80'],
                             });
                             setIsAddingProduct(false);
                           }}
