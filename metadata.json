@@ -1,0 +1,6 @@
+{
+  "name": "PixelPulse Camera Rental",
+  "description": "Professional camera, lens and photography equipment rentals in Belagavi, Karnataka. Capture More. Worry Less.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
